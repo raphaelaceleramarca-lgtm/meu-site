@@ -566,14 +566,15 @@ $('#btn-desconectar').addEventListener('click', () => {
   mostrar();
 });
 
-const copiarCodigo = async () => {
-  try {
-    const codigo = await (await fetch('apps-script/Codigo.gs')).text();
-    await navigator.clipboard.writeText(codigo);
-    aviso('Código copiado. Cole no Apps Script.');
-  } catch {
-    window.open('apps-script/Codigo.gs', '_blank', 'noopener');
-  }
+// O código é baixado antes do clique: alguns navegadores só deixam copiar
+// se a cópia acontece logo no clique, sem esperar um download no meio.
+let codigoScript = null;
+fetch('apps-script/Codigo.gs').then((r) => r.text()).then((t) => { codigoScript = t; }).catch(() => {});
+const copiarCodigo = () => {
+  if (!codigoScript) { window.open('apps-script/Codigo.gs', '_blank', 'noopener'); return; }
+  navigator.clipboard.writeText(codigoScript)
+    .then(() => aviso('Código copiado. Cole no Apps Script.'))
+    .catch(() => window.open('apps-script/Codigo.gs', '_blank', 'noopener'));
 };
 $('#btn-copiar-codigo').addEventListener('click', copiarCodigo);
 $('#btn-copiar-codigo-2').addEventListener('click', copiarCodigo);
