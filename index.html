@@ -116,6 +116,11 @@
           <div class="kpi-num" id="k-saidas">—</div>
           <div class="kpi-sub" id="k-saidas-sub"></div>
         </div>
+        <a class="card kpi kpi-link" href="#investimentos">
+          <div class="rotulo">Investido</div>
+          <div class="kpi-num" id="k-investido">—</div>
+          <div class="kpi-sub" id="k-investido-sub"></div>
+        </a>
       </section>
 
       <section class="duas">
@@ -128,6 +133,38 @@
           <h2 class="titulo-card">Saídas por categoria</h2>
           <p class="sub-card">Barra cheia: já pago. Clara: ainda previsto.</p>
           <ul class="cats" id="cats"></ul>
+        </div>
+      </section>
+
+      <section class="card" id="investimentos">
+        <div class="cab-card">
+          <div>
+            <h2 class="titulo-card">Investimentos</h2>
+            <p class="sub-card">Atualize o saldo de cada um quando olhar o app do banco ou da corretora.</p>
+          </div>
+          <button type="button" class="btn" id="btn-novo-inv" aria-expanded="false">Adicionar investimento</button>
+        </div>
+        <div class="inv-aviso" id="inv-aviso" hidden>
+          Para usar investimentos, atualize o código do Apps Script: copie o código novo (Ajustes → Copiar código do Apps Script), cole no lugar do antigo, ajuste a senha na linha 5 e use <b>Implantar → Gerenciar implantações → editar → Nova versão</b>.
+        </div>
+        <div class="inv-form" id="inv-form" hidden>
+          <label class="campo"><span>Investimento</span><input id="inv-nome" placeholder="Ex.: CDB Nubank, Tesouro Selic 2029" autocomplete="off"></label>
+          <label class="campo"><span>Tipo</span><select id="inv-tipo"></select></label>
+          <label class="campo"><span>Instituição</span><input id="inv-inst" placeholder="Ex.: Nubank, XP" autocomplete="off"></label>
+          <div class="seg mini" data-campo="conta" role="group" aria-label="Conta" id="inv-conta">
+            <button type="button" data-v="PF" aria-pressed="true">PF</button>
+            <button type="button" data-v="PJ" aria-pressed="false">PJ</button>
+          </div>
+          <label class="campo estreito"><span>Valor aplicado</span><input id="inv-aplicado" inputmode="decimal" autocomplete="off" placeholder="0,00"></label>
+          <label class="campo estreito"><span>Saldo atual</span><input id="inv-saldo" inputmode="decimal" autocomplete="off" placeholder="0,00"></label>
+          <div class="inv-form-acoes">
+            <button type="button" class="btn fantasma" id="inv-cancelar">Cancelar</button>
+            <button type="button" class="btn primario" id="inv-salvar">Salvar</button>
+          </div>
+        </div>
+        <div class="inv-corpo">
+          <div class="inv-resumo" id="inv-resumo"></div>
+          <ul class="lista inv-lista" id="inv-lista"></ul>
         </div>
       </section>
 
@@ -160,6 +197,7 @@
       <h2>Ajustes</h2>
       <p id="dlg-info" class="sub-card"></p>
       <div class="linha-botoes">
+        <button type="button" class="btn" id="btn-copiar-codigo-2">Copiar código do Apps Script</button>
         <button type="button" class="btn" id="btn-desconectar">Desconectar este navegador</button>
         <button class="btn primario" value="ok">Fechar</button>
       </div>

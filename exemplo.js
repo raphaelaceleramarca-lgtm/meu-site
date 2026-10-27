@@ -22,3 +22,15 @@ export function dadosExemplo(hoje = new Date()) {
     { linha: i + 2, data, tipo, categoria, descricao, previsto, realizado, status, observacao, conta }
   ));
 }
+
+export function investimentosExemplo(hoje = new Date()) {
+  const data = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
+  return [
+    ['Reserva no CDB', 'Reserva de emergência', 'Banco A', 'PF', 8000, 8420],
+    ['Tesouro Selic', 'Tesouro Direto', 'Corretora B', 'PF', 5000, 5310],
+    ['Ações', 'Ações', 'Corretora B', 'PF', 3000, 2780],
+    ['Caixa da empresa', 'Renda fixa', 'Banco C', 'PJ', 10000, 10350],
+  ].map(([nome, tipo, instituicao, conta, aplicado, saldo], i) => (
+    { linha: i + 2, data, nome, tipo, instituicao, conta, aplicado, saldo, observacao: '' }
+  ));
+}

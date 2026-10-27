@@ -20,6 +20,11 @@ Quanto mais lançamentos a planilha tiver, melhor o site acerta, porque ele copi
 
 Na lista, **Paguei** / **Recebi** preenche o valor realizado e muda o status. **Excluir** pede confirmação.
 
+## Investimentos
+
+A seção **Investimentos** usa a aba `Investimentos` da planilha (uma linha por aplicação: nome, tipo, instituição, PF/PJ, valor aplicado e saldo atual).
+No site, **Adicionar investimento** cria uma linha; **Atualizar saldo** troca o saldo atual e a data. O total investido, o rendimento e a divisão PF/PJ e por tipo aparecem no painel.
+
 ## Primeira configuração (uma vez)
 
 1. Na planilha, abra **Extensões → Apps Script**.

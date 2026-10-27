@@ -1,5 +1,5 @@
 import { interpretar, lerValor, CATEGORIAS_PADRAO } from './parser.js';
-import { dadosExemplo } from './exemplo.js';
+import { dadosExemplo, investimentosExemplo } from './exemplo.js';
 
 const $ = (s) => document.querySelector(s);
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -8,6 +8,7 @@ const PCT = new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDi
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const brl = (v) => BRL.format(v || 0);
 const PAGO = 'Pago/Recebido';
+const TIPOS_INV = ['Reserva de emergência', 'Renda fixa', 'Tesouro Direto', 'Ações', 'Fundos imobiliários', 'Fundos', 'Previdência', 'Cripto', 'Exterior', 'Outros'];
 
 // ---------- guardado no navegador ----------
 const guardar = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch { /* sem armazenamento */ } };
@@ -19,6 +20,9 @@ const st = {
   lista: 'aberto',
   busca: '',
   lancs: [],
+  invs: null,
+  invConta: 'PF',
+  invEditando: null,
   planilha: '',
   rascunho: null,
   ajustes: {},
@@ -35,6 +39,7 @@ const atrasado = (l) => !pago(l) && l.data && l.data < hojeISO();
 
 // ---------- conversa com a planilha ----------
 let demo = null;
+let demoInv = null;
 async function api(acao, extra = {}) {
   if (st.cfg?.exemplo) return apiExemplo(acao, extra);
   let r;
@@ -48,6 +53,7 @@ async function api(acao, extra = {}) {
   try { j = await r.json(); } catch { throw new Error('A resposta não veio da ponte certa. Confira a URL (ela termina em /exec).'); }
   if (!j.ok) throw new Error(j.erro || 'A planilha recusou o pedido.');
   st.lancs = j.lancamentos || [];
+  st.invs = Array.isArray(j.investimentos) ? j.investimentos : null;
   st.planilha = j.planilha || '';
   return j;
 }
@@ -57,7 +63,12 @@ function apiExemplo(acao, extra) {
   if (acao === 'adicionar') demo.push({ ...extra.lancamento, linha: Math.max(1, ...demo.map((l) => l.linha)) + 1 });
   if (acao === 'atualizar') Object.assign(demo.find((l) => l.linha === extra.linha), extra.campos);
   if (acao === 'excluir') demo = demo.filter((l) => l.linha !== extra.linha);
+  if (!demoInv) demoInv = investimentosExemplo();
+  if (acao === 'inv_adicionar') demoInv.push({ ...extra.investimento, linha: Math.max(1, ...demoInv.map((l) => l.linha)) + 1 });
+  if (acao === 'inv_atualizar') Object.assign(demoInv.find((l) => l.linha === extra.linha), extra.campos);
+  if (acao === 'inv_excluir') demoInv = demoInv.filter((l) => l.linha !== extra.linha);
   st.lancs = demo.map((l) => ({ ...l }));
+  st.invs = demoInv.map((l) => ({ ...l }));
   st.planilha = 'Dados de exemplo';
   return Promise.resolve({ ok: true });
 }
@@ -76,6 +87,13 @@ function resumo(conta) {
     aReceber: soma((l) => ent(l) && !pago(l)), aPagar: soma((l) => sai(l) && !pago(l)),
     cobertura: s ? e / s : null,
   };
+}
+
+function resumoInv(conta) {
+  const ls = (st.invs || []).filter((i) => conta === 'Todos' || i.conta === conta);
+  const saldo = ls.reduce((s, i) => s + (i.saldo || 0), 0);
+  const aplicado = ls.reduce((s, i) => s + (i.aplicado || 0), 0);
+  return { n: ls.length, saldo, aplicado, rendimento: saldo - aplicado, pct: aplicado ? (saldo - aplicado) / aplicado : null };
 }
 
 // ---------- desenho ----------
@@ -105,8 +123,14 @@ function desenhar() {
   setTexto('#k-entradas-sub', `${brl(r.recebido)} recebido · ${brl(r.aReceber)} a receber`);
   setTexto('#k-saidas', brl(r.saidas));
   setTexto('#k-saidas-sub', `${brl(r.pagoSaidas)} pago · ${brl(r.aPagar)} a pagar`);
+  const iv = resumoInv(st.conta);
+  setTexto('#k-investido', st.invs ? brl(iv.saldo) : '—');
+  setTexto('#k-investido-sub', !st.invs ? 'Atualize o Apps Script'
+    : !iv.n ? 'Nenhum investimento lançado'
+      : `${iv.rendimento >= 0 ? '+' : '−'}${brl(Math.abs(iv.rendimento))} de rendimento`, st.invs && iv.n ? (iv.rendimento >= 0 ? 'pos' : 'neg') : null);
 
   desenharPfPj();
+  desenharInvestimentos();
   desenharCategorias();
   desenharFluxo();
   desenharLista();
@@ -203,7 +227,7 @@ function desenharFluxo() {
   const medir = (txt) => { const t = add('text', {}); t.textContent = txt; const w = t.getComputedTextLength(); t.remove(); return w; };
 
   let lo = Math.min(0, ...pts.map((p) => p.saldo)), hi = Math.max(0, ...pts.map((p) => p.saldo));
-  if (lo === hi) hi = lo + 1;
+  if (lo === hi) hi = lo + 1000;
   const passo = escalaBonita((hi - lo) / 4);
   lo = Math.floor(lo / passo) * passo; hi = Math.ceil(hi / passo) * passo;
   const ticks = [];
@@ -262,6 +286,89 @@ function desenharFluxo() {
     dica.style.left = `${Math.max(0, px)}px`; dica.style.top = `${py}px`;
   });
   alvo.addEventListener('pointerleave', () => { dica.hidden = true; anel.setAttribute('visibility', 'hidden'); });
+}
+
+function desenharInvestimentos() {
+  $('#inv-aviso').hidden = st.invs !== null;
+  $('#btn-novo-inv').disabled = st.invs === null;
+  const resumoBox = $('#inv-resumo');
+  const ul = $('#inv-lista');
+  resumoBox.replaceChildren();
+  ul.replaceChildren();
+  if (st.invs === null) return;
+
+  const r = resumoInv(st.conta);
+  const pctTxt = r.pct == null ? '' : ` (${r.pct >= 0 ? '+' : ''}${(r.pct * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%)`;
+  resumoBox.append(el('div', {},
+    el('div', { class: 'rotulo' }, st.conta === 'Todos' ? 'Total investido' : `Investido em ${st.conta}`),
+    el('div', { class: 'inv-total' }, brl(r.saldo)),
+    el('div', { class: `kpi-sub ${r.n ? (r.rendimento >= 0 ? 'pos' : 'neg') : ''}` },
+      r.n ? `${r.rendimento >= 0 ? '+' : '−'}${brl(Math.abs(r.rendimento))}${pctTxt} sobre ${brl(r.aplicado)} aplicados` : 'Nenhum investimento ainda.'),
+  ));
+  if (st.conta === 'Todos') {
+    const split = el('div', { class: 'inv-split' });
+    for (const [c, cor] of [['PF', 'var(--pf)'], ['PJ', 'var(--pj)']]) {
+      const x = resumoInv(c);
+      split.append(el('div', { class: 'conta-box' },
+        el('div', { class: 'conta-tit' }, el('span', { class: 'ponto', style: `background:${cor}` }), c),
+        el('div', { class: 'conta-saldo' }, brl(x.saldo))));
+    }
+    resumoBox.append(split);
+  }
+  const ls = (st.invs || []).filter((i) => st.conta === 'Todos' || i.conta === st.conta);
+  const porTipo = new Map();
+  for (const i of ls) porTipo.set(i.tipo, (porTipo.get(i.tipo) || 0) + (i.saldo || 0));
+  const tipos = [...porTipo].sort((a, b) => b[1] - a[1]);
+  if (tipos.length && r.saldo > 0) {
+    const cor = st.conta === 'PJ' ? 'var(--pj)' : st.conta === 'PF' ? 'var(--pf)' : 'var(--ink)';
+    resumoBox.append(el('ul', { class: 'inv-tipos' }, tipos.map(([t, v]) => el('li', {},
+      el('div', { class: 'cat-topo' }, el('span', {}, t), el('span', {}, `${brl(v)} · ${PCT.format(v / r.saldo)}`)),
+      el('div', { class: 'cat-barra' }, el('i', { style: `width:${(v / r.saldo) * 100}%;background:${cor}` }))))));
+  }
+
+  if (!ls.length) {
+    ul.append(el('li', { class: 'vazio' }, 'Clique em “Adicionar investimento” para lançar o primeiro.'));
+    return;
+  }
+  for (const i of [...ls].sort((a, b) => b.saldo - a.saldo)) {
+    const rend = (i.saldo || 0) - (i.aplicado || 0);
+    const pct = i.aplicado ? rend / i.aplicado : null;
+    const meta = [el('span', { class: `tag ${i.conta}` }, i.conta), el('span', {}, i.tipo)];
+    if (i.instituicao) meta.push(el('span', { 'aria-hidden': 'true' }, '·'), el('span', {}, i.instituicao));
+    if (i.data) { const m = diaMes(i.data); meta.push(el('span', { 'aria-hidden': 'true' }, '·'), el('span', {}, `atualizado ${m.dia} ${m.mes}`)); }
+    const acoes = el('div', { class: 'i-acoes' });
+    const li = el('li', { class: 'item inv-item' },
+      el('div', { class: 'i-main' }, el('div', { class: 'i-desc', title: i.nome }, i.nome), el('div', { class: 'i-meta' }, meta)),
+      el('div', { class: 'inv-valor' }, el('b', {}, brl(i.saldo)),
+        el('small', { class: rend >= 0 ? 'pos' : 'neg' }, `${rend >= 0 ? '+' : '−'}${brl(Math.abs(rend))}${pct == null ? '' : ` · ${(pct * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`}`)),
+      acoes);
+    if (st.invEditando === i.linha) {
+      const inp = el('input', { inputmode: 'decimal', 'aria-label': `Novo saldo de ${i.nome}`, value: i.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) });
+      const salvar = () => {
+        const v = lerValor(inp.value) ?? (inp.value.trim() === '0' ? 0 : null);
+        if (v == null) { aviso('Digite o saldo, por exemplo 10.250,90.', true); return; }
+        st.invEditando = null;
+        rodar(() => api('inv_atualizar', { linha: i.linha, nome: i.nome, campos: { saldo: v, data: hojeISO() } }), `${i.nome}: saldo atualizado.`);
+      };
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') salvar(); if (e.key === 'Escape') { st.invEditando = null; desenharInvestimentos(); } });
+      li.append(el('div', { class: 'inv-editar' }, 'Saldo hoje:', inp,
+        el('button', { type: 'button', class: 'btn primario', onclick: salvar }, 'Salvar'),
+        el('button', { type: 'button', class: 'btn fantasma', onclick: () => { st.invEditando = null; desenharInvestimentos(); } }, 'Cancelar')));
+      setTimeout(() => { inp.focus(); inp.select(); });
+    } else {
+      acoes.append(el('button', { type: 'button', onclick: () => { st.invEditando = i.linha; desenharInvestimentos(); } }, 'Atualizar saldo'));
+    }
+    const btnExcluir = el('button', { type: 'button', 'aria-label': `Excluir ${i.nome}` }, 'Excluir');
+    let timer;
+    btnExcluir.addEventListener('click', () => {
+      if (btnExcluir.classList.contains('confirmar')) { clearTimeout(timer); rodar(() => api('inv_excluir', { linha: i.linha, nome: i.nome }), `${i.nome} excluído.`); return; }
+      btnExcluir.classList.add('confirmar');
+      btnExcluir.textContent = 'Confirmar';
+      timer = setTimeout(() => { btnExcluir.classList.remove('confirmar'); btnExcluir.textContent = 'Excluir'; }, 3000);
+    });
+    acoes.append(btnExcluir);
+    ul.append(li);
+  }
 }
 
 function escalaBonita(bruto) {
@@ -454,12 +561,12 @@ $('#btn-ajustes').addEventListener('click', () => {
 });
 $('#btn-desconectar').addEventListener('click', () => {
   guardar('financas.cfg', null);
-  st.cfg = null; st.lancs = []; demo = null;
+  st.cfg = null; st.lancs = []; st.invs = null; demo = null; demoInv = null;
   $('#dlg-ajustes').close();
   mostrar();
 });
 
-$('#btn-copiar-codigo').addEventListener('click', async () => {
+const copiarCodigo = async () => {
   try {
     const codigo = await (await fetch('apps-script/Codigo.gs')).text();
     await navigator.clipboard.writeText(codigo);
@@ -467,7 +574,9 @@ $('#btn-copiar-codigo').addEventListener('click', async () => {
   } catch {
     window.open('apps-script/Codigo.gs', '_blank', 'noopener');
   }
-});
+};
+$('#btn-copiar-codigo').addEventListener('click', copiarCodigo);
+$('#btn-copiar-codigo-2').addEventListener('click', copiarCodigo);
 
 $('#btn-conectar').addEventListener('click', async () => {
   const url = $('#cfg-url').value.trim();
@@ -496,6 +605,45 @@ $('#btn-conectar').addEventListener('click', async () => {
 });
 $('#btn-exemplo').addEventListener('click', () => { st.cfg = { exemplo: true }; guardar('financas.cfg', st.cfg); mostrar(); sincronizar(); });
 $('#btn-sair-exemplo').addEventListener('click', () => $('#btn-desconectar').click());
+
+// ---------- investimentos: formulário ----------
+$('#inv-tipo').replaceChildren(...TIPOS_INV.map((t) => new Option(t, t)));
+const abrirFormInv = (abrir) => {
+  $('#inv-form').hidden = !abrir;
+  $('#btn-novo-inv').setAttribute('aria-expanded', String(abrir));
+  if (abrir) {
+    st.invConta = st.conta === 'PJ' ? 'PJ' : 'PF';
+    document.querySelectorAll('#inv-conta button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === st.invConta)));
+    $('#inv-nome').focus();
+  }
+};
+$('#btn-novo-inv').addEventListener('click', () => abrirFormInv($('#inv-form').hidden));
+$('#inv-cancelar').addEventListener('click', () => abrirFormInv(false));
+$('#inv-conta').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-v]');
+  if (!b) return;
+  st.invConta = b.dataset.v;
+  document.querySelectorAll('#inv-conta button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+});
+$('#inv-salvar').addEventListener('click', () => {
+  const nome = $('#inv-nome').value.trim();
+  const saldo = lerValor($('#inv-saldo').value) ?? ($('#inv-saldo').value.trim() === '0' ? 0 : null);
+  const aplicadoTxt = $('#inv-aplicado').value.trim();
+  const aplicado = aplicadoTxt ? lerValor(aplicadoTxt) : null;
+  if (!nome) { aviso('Dê um nome ao investimento.', true); $('#inv-nome').focus(); return; }
+  if (saldo == null && aplicado == null) { aviso('Informe o saldo atual ou o valor aplicado.', true); $('#inv-saldo').focus(); return; }
+  if (aplicadoTxt && aplicado == null) { aviso('O valor aplicado não está num formato válido. Ex.: 5.000,00', true); return; }
+  const investimento = {
+    data: hojeISO(), nome, tipo: $('#inv-tipo').value, instituicao: $('#inv-inst').value.trim(),
+    conta: st.invConta, aplicado: aplicado ?? saldo, saldo: saldo ?? aplicado, observacao: '',
+  };
+  rodar(async () => {
+    await api('inv_adicionar', { investimento });
+    ['#inv-nome', '#inv-inst', '#inv-aplicado', '#inv-saldo'].forEach((s) => { $(s).value = ''; });
+    abrirFormInv(false);
+  }, `${nome} adicionado aos investimentos.`);
+});
+['#inv-nome', '#inv-inst', '#inv-aplicado', '#inv-saldo'].forEach((s) => $(s).addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#inv-salvar').click(); }));
 
 let largura = window.innerWidth;
 window.addEventListener('resize', () => {
