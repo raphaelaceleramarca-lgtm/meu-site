@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#F5F6F8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0E1013" media="(prefers-color-scheme: dark)">
+  <title>Finanças PF e PJ</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111318'/%3E%3Cpath d='M9 21l5-6 4 3 5-7' stroke='%2334C6B3' stroke-width='2.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-in">
+      <div class="marca">
+        <span class="logo" aria-hidden="true"></span>
+        <div>
+          <div class="marca-nome">Finanças</div>
+          <div class="marca-sub" id="planilha-nome">PF e PJ</div>
+        </div>
+      </div>
+      <div class="topo-acoes" id="topo-acoes" hidden>
+        <div class="seg" role="group" aria-label="Conta" id="seg-conta">
+          <button type="button" data-conta="Todos">Tudo</button>
+          <button type="button" data-conta="PF">PF</button>
+          <button type="button" data-conta="PJ">PJ</button>
+        </div>
+        <button type="button" class="icone" id="btn-sync" aria-label="Atualizar da planilha" title="Atualizar da planilha">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></svg>
+        </button>
+        <button type="button" class="icone" id="btn-ajustes" aria-label="Ajustes" title="Ajustes">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="pagina">
+    <!-- Primeiro acesso: conectar a planilha -->
+    <section id="tela-conectar" class="conectar" hidden>
+      <h1>Conecte sua planilha</h1>
+      <p class="lead">O site lê e grava direto na aba <b>Lançamentos</b> da sua planilha do Google. Isso é feito uma vez só, neste navegador.</p>
+      <ol class="passos">
+        <li>Na planilha, abra <b>Extensões → Apps Script</b>.</li>
+        <li>Apague o que estiver lá, cole o código abaixo e troque a <b>SENHA</b> na linha 5 por uma senha sua.</li>
+        <li>Clique em <b>Implantar → Nova implantação</b>, escolha <b>App da Web</b>, deixe <b>Executar como: eu</b> e <b>Quem pode acessar: qualquer pessoa</b>. Autorize quando o Google pedir.</li>
+        <li>Copie a <b>URL do app da Web</b> e cole aqui com a senha.</li>
+      </ol>
+      <button type="button" class="btn" id="btn-copiar-codigo">Copiar código do Apps Script</button>
+      <div class="form-conectar">
+        <label for="cfg-url">URL do app da Web</label>
+        <input id="cfg-url" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false">
+        <label for="cfg-senha">Senha</label>
+        <input id="cfg-senha" type="password" autocomplete="current-password">
+        <p class="erro" id="cfg-erro" role="alert" hidden></p>
+        <div class="linha-botoes">
+          <button type="button" class="btn primario" id="btn-conectar">Conectar</button>
+          <button type="button" class="btn fantasma" id="btn-exemplo">Ver com dados de exemplo</button>
+        </div>
+      </div>
+      <p class="nota">A URL e a senha ficam guardadas só neste navegador. Nada dos seus dados fica no GitHub.</p>
+    </section>
+
+    <!-- Painel -->
+    <section id="tela-painel" hidden>
+      <div class="aviso-exemplo" id="aviso-exemplo" hidden>
+        Você está vendo <b>dados de exemplo</b>. Nada aqui vai para a sua planilha.
+        <button type="button" class="link" id="btn-sair-exemplo">Conectar minha planilha</button>
+      </div>
+
+      <section class="card lancar" aria-labelledby="lancar-titulo">
+        <h2 id="lancar-titulo" class="rotulo">Novo lançamento</h2>
+        <div class="q-linha">
+          <input id="q" autocomplete="off" spellcheck="false" placeholder="Ex.: mercado 320 ontem · recebi 3.000 Acelera dia 15 · GPT 100 pj">
+          <button type="button" class="btn primario" id="btn-lancar" disabled>Lançar</button>
+        </div>
+        <div class="previa" id="previa" hidden>
+          <div class="seg mini" data-campo="tipo" role="group" aria-label="Tipo">
+            <button type="button" data-v="Saída">Saída</button>
+            <button type="button" data-v="Entrada">Entrada</button>
+          </div>
+          <div class="seg mini" data-campo="conta" role="group" aria-label="Conta">
+            <button type="button" data-v="PF">PF</button>
+            <button type="button" data-v="PJ">PJ</button>
+          </div>
+          <div class="seg mini" data-campo="status" role="group" aria-label="Situação">
+            <button type="button" data-v="Previsto">Previsto</button>
+            <button type="button" data-v="Pago/Recebido">Pago</button>
+          </div>
+          <label class="campo"><span>Descrição</span><input id="p-descricao" autocomplete="off"></label>
+          <label class="campo estreito"><span>Valor</span><input id="p-valor" inputmode="decimal" autocomplete="off"></label>
+          <label class="campo"><span>Categoria</span><select id="p-categoria"></select></label>
+          <label class="campo estreito"><span>Data</span><input id="p-data" type="date"></label>
+        </div>
+        <p class="pista" id="pista">Escreva do seu jeito. Eu separo valor, data, categoria e se é PF ou PJ. Você confere antes de lançar.</p>
+      </section>
+
+      <section class="kpis" aria-label="Resumo">
+        <div class="card kpi destaque">
+          <div class="rotulo">Saldo previsto</div>
+          <div class="kpi-num" id="k-saldo">—</div>
+          <div class="kpi-sub" id="k-saldo-sub"></div>
+          <div class="barra-cobertura" aria-hidden="true"><span id="k-cobertura-barra"></span></div>
+        </div>
+        <div class="card kpi">
+          <div class="rotulo">Entradas</div>
+          <div class="kpi-num" id="k-entradas">—</div>
+          <div class="kpi-sub" id="k-entradas-sub"></div>
+        </div>
+        <div class="card kpi">
+          <div class="rotulo">Saídas</div>
+          <div class="kpi-num" id="k-saidas">—</div>
+          <div class="kpi-sub" id="k-saidas-sub"></div>
+        </div>
+      </section>
+
+      <section class="duas">
+        <div class="card" id="card-pfpj">
+          <h2 class="titulo-card">PF e PJ</h2>
+          <div class="pfpj" id="pfpj"></div>
+          <p class="frase" id="retirada"></p>
+        </div>
+        <div class="card">
+          <h2 class="titulo-card">Saídas por categoria</h2>
+          <p class="sub-card">Barra cheia: já pago. Clara: ainda previsto.</p>
+          <ul class="cats" id="cats"></ul>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="cab-card">
+          <div>
+            <h2 class="titulo-card">Fluxo de caixa do mês</h2>
+            <p class="sub-card" id="fluxo-sub">Saldo acumulado se tudo sair na data prevista.</p>
+          </div>
+        </div>
+        <div class="fluxo" id="fluxo"></div>
+      </section>
+
+      <section class="card">
+        <div class="cab-card">
+          <h2 class="titulo-card">Lançamentos</h2>
+          <div class="seg mini" role="group" aria-label="Mostrar" id="seg-lista">
+            <button type="button" data-v="aberto">Em aberto</button>
+            <button type="button" data-v="todos">Todos</button>
+          </div>
+        </div>
+        <input id="busca" class="busca" type="search" placeholder="Buscar" aria-label="Buscar lançamentos">
+        <ul class="lista" id="lista"></ul>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="dlg-ajustes">
+    <form method="dialog" class="dlg">
+      <h2>Ajustes</h2>
+      <p id="dlg-info" class="sub-card"></p>
+      <div class="linha-botoes">
+        <button type="button" class="btn" id="btn-desconectar">Desconectar este navegador</button>
+        <button class="btn primario" value="ok">Fechar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
