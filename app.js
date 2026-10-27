@@ -41,7 +41,7 @@ async function api(acao, extra = {}) {
   try {
     r = await fetch(st.cfg.url, { method: 'POST', body: JSON.stringify({ senha: st.cfg.senha, acao, ...extra }) });
   } catch {
-    throw new Error('Não consegui falar com a planilha. Confira sua internet e a URL do app da Web.');
+    throw new Error('A planilha não liberou o acesso ao site. No Apps Script, em Implantar → Gerenciar implantações, deixe "Executar como: Eu" e "Quem pode acessar: Qualquer pessoa" (sem "com Conta do Google") e implante uma nova versão.');
   }
   if (!r.ok) throw new Error(`A planilha respondeu com erro ${r.status}. Confira se a implantação está como "Qualquer pessoa".`);
   let j;
