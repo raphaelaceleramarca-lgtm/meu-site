@@ -1,5 +1,5 @@
-import { interpretar, lerValor, CATEGORIAS_PADRAO } from './parser.js';
-import { dadosExemplo, investimentosExemplo } from './exemplo.js';
+import { interpretar, lerValor, CATEGORIAS_PADRAO } from './parser.js?v=2026-11-05';
+import { dadosExemplo, investimentosExemplo } from './exemplo.js?v=2026-11-05';
 
 const $ = (s) => document.querySelector(s);
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
