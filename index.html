@@ -99,7 +99,20 @@
         <p class="pista" id="pista">Escreva do seu jeito. Eu separo valor, data, categoria e se é PF ou PJ. Você confere antes de lançar.</p>
       </section>
 
-      <section class="kpis" aria-label="Resumo">
+      <section class="mes-barra" aria-label="Mês">
+        <div class="mes-nav">
+          <button type="button" class="icone" id="mes-ant" aria-label="Mês anterior" title="Mês anterior">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+          </button>
+          <h1 class="mes-titulo" id="mes-titulo">—</h1>
+          <button type="button" class="icone" id="mes-prox" aria-label="Próximo mês" title="Próximo mês">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+        <div class="seg mini meses" role="group" aria-label="Escolher mês" id="seg-mes"></div>
+      </section>
+
+      <section class="kpis" aria-label="Resumo do mês">
         <div class="card kpi destaque">
           <div class="rotulo">Saldo previsto</div>
           <div class="kpi-num" id="k-saldo">—</div>
@@ -133,6 +146,21 @@
           <h2 class="titulo-card">Saídas por categoria</h2>
           <p class="sub-card">Barra cheia: já pago. Clara: ainda previsto.</p>
           <ul class="cats" id="cats"></ul>
+        </div>
+      </section>
+
+      <section class="card" id="card-meses">
+        <div class="cab-card">
+          <div>
+            <h2 class="titulo-card">Mês a mês</h2>
+            <p class="sub-card">Cada mês separado, na conta escolhida. Toque num mês para abrir.</p>
+          </div>
+        </div>
+        <div class="tabela-rolar">
+          <table class="tabela-meses">
+            <thead><tr><th scope="col">Mês</th><th scope="col">Entradas</th><th scope="col">Saídas</th><th scope="col">Saldo</th><th scope="col">A pagar</th></tr></thead>
+            <tbody id="meses-corpo"></tbody>
+          </table>
         </div>
       </section>
 
@@ -180,7 +208,7 @@
 
       <section class="card">
         <div class="cab-card">
-          <h2 class="titulo-card">Lançamentos</h2>
+          <h2 class="titulo-card">Lançamentos do mês</h2>
           <div class="seg mini" role="group" aria-label="Mostrar" id="seg-lista">
             <button type="button" data-v="aberto">Em aberto</button>
             <button type="button" data-v="todos">Todos</button>

@@ -92,6 +92,24 @@ h1, h2 { margin: 0; text-wrap: balance; }
 #seg-conta button[data-conta="PF"][aria-pressed="true"] { color: var(--pf); }
 #seg-conta button[data-conta="PJ"][aria-pressed="true"] { color: var(--pj); }
 
+/* Meses */
+.icone:disabled { opacity: .35; cursor: default; }
+.mes-barra { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; }
+.mes-nav { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.mes-titulo { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; min-width: 9.5ch; text-align: center; }
+.meses { max-width: 100%; overflow-x: auto; }
+.meses button { white-space: nowrap; }
+.tabela-rolar { overflow-x: auto; }
+.tabela-meses { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tabela-meses th { text-align: right; font-size: 12px; font-weight: 500; color: var(--muted); padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tabela-meses td { text-align: right; padding: 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tabela-meses th:first-child, .tabela-meses td:first-child { text-align: left; }
+.tabela-meses tbody tr { cursor: pointer; }
+.tabela-meses tbody tr:hover td { background: var(--soft); }
+.tabela-meses tbody tr[aria-current="true"] td { background: var(--soft); font-weight: 600; }
+.tabela-meses tbody tr[aria-current="true"] td:first-child { box-shadow: inset 3px 0 0 var(--ink); }
+.tabela-meses tbody tr:last-child td { border-bottom: 0; }
+
 /* Página */
 .pagina { padding-block: 20px 56px; }
 #tela-painel { display: flex; flex-direction: column; gap: 14px; }

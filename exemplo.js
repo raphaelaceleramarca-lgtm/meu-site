@@ -3,6 +3,8 @@ export function dadosExemplo(hoje = new Date()) {
   const a = hoje.getFullYear();
   const m = String(hoje.getMonth() + 1).padStart(2, '0');
   const d = (dia) => `${a}-${m}-${String(dia).padStart(2, '0')}`;
+  const ant = new Date(a, hoje.getMonth() - 1, 1);
+  const da = (dia) => `${ant.getFullYear()}-${String(ant.getMonth() + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
   const linhas = [
     [d(5), 'Entrada', 'Receitas', 'Cliente Alfa', 4200, 4200, 'Pago/Recebido', '', 'PJ'],
     [d(15), 'Entrada', 'Receitas', 'Cliente Beta', 2800, null, 'Previsto', '', 'PJ'],
@@ -17,6 +19,10 @@ export function dadosExemplo(hoje = new Date()) {
     [d(22), 'Saída', 'Marketing', 'Anúncios', 600, null, 'Previsto', '', 'PJ'],
     [d(25), 'Saída', 'Saúde e bem-estar', 'Plano de saúde', 480, null, 'Previsto', '', 'PF'],
     [null, 'Saída', 'Alimentação', 'Mercado', 1400, null, 'Previsto', 'Sem data definida', 'PF'],
+    [da(5), 'Entrada', 'Receitas', 'Cliente Alfa', 4200, 4200, 'Pago/Recebido', '', 'PJ'],
+    [da(5), 'Saída', 'Moradia', 'Aluguel', 2100, 2100, 'Pago/Recebido', '', 'PF'],
+    [da(12), 'Saída', 'Cartões', 'Fatura do cartão', 1180, 1180, 'Pago/Recebido', '', 'PF'],
+    [da(20), 'Saída', 'Impostos', 'DAS', 210, 210, 'Pago/Recebido', '', 'PJ'],
   ];
   return linhas.map(([data, tipo, categoria, descricao, previsto, realizado, status, observacao, conta], i) => (
     { linha: i + 2, data, tipo, categoria, descricao, previsto, realizado, status, observacao, conta }

@@ -17,6 +17,7 @@ const ler = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch {
 const st = {
   cfg: ler('financas.cfg'),
   conta: ler('financas.conta') || 'Todos',
+  mes: ler('financas.mes'),
   lista: 'aberto',
   busca: '',
   lancs: [],
@@ -34,6 +35,28 @@ const hojeISO = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 const diaMes = (iso) => (iso ? { dia: iso.slice(8, 10), mes: MESES[Number(iso.slice(5, 7)) - 1] } : null);
+// ---------- meses ----------
+// Cada lançamento pertence ao mês da sua data. Os sem data ficam em "Sem data".
+const SEM_DATA = 'sem-data';
+const MESES_NOME = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const mesDe = (l) => (l.data ? l.data.slice(0, 7) : SEM_DATA);
+const rotuloMes = (m) => (m === SEM_DATA ? 'Sem data' : `${MESES_NOME[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`);
+const rotuloCurto = (m) => (m === SEM_DATA ? 'Sem data' : `${MESES[Number(m.slice(5, 7)) - 1]}/${m.slice(2, 4)}`);
+function listaMeses() {
+  const ms = new Set(st.lancs.map(mesDe));
+  ms.add(hojeISO().slice(0, 7));
+  return [...ms].sort((a, b) => (a === SEM_DATA ? 1 : b === SEM_DATA ? -1 : a.localeCompare(b)));
+}
+function mesAtivo() {
+  return st.mes && listaMeses().includes(st.mes) ? st.mes : hojeISO().slice(0, 7);
+}
+const doMes = (ls, mes = mesAtivo()) => ls.filter((l) => mesDe(l) === mes);
+function escolherMes(mes) {
+  st.mes = mes;
+  guardar('financas.mes', mes);
+  desenhar();
+}
+
 const pago = (l) => l.realizado != null;
 const atrasado = (l) => !pago(l) && l.data && l.data < hojeISO();
 
@@ -74,8 +97,8 @@ function apiExemplo(acao, extra) {
 }
 
 // ---------- contas ----------
-function resumo(conta) {
-  const ls = st.lancs.filter((l) => conta === 'Todos' || l.conta === conta);
+function resumo(conta, mes = mesAtivo()) {
+  const ls = doMes(st.lancs, mes).filter((l) => conta === 'Todos' || l.conta === conta);
   const soma = (f) => ls.filter(f).reduce((s, l) => s + (l.previsto || 0), 0);
   const somaReal = (f) => ls.filter(f).reduce((s, l) => s + (l.realizado || 0), 0);
   const ent = (l) => l.tipo === 'Entrada';
@@ -109,6 +132,7 @@ function desenhar() {
   document.querySelectorAll('#seg-lista button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === st.lista)));
   $('#planilha-nome').textContent = st.planilha || 'PF e PJ';
   $('#aviso-exemplo').hidden = !st.cfg?.exemplo;
+  desenharMeses();
 
   const r = resumo(st.conta);
   setTexto('#k-saldo', brl(r.saldo), r.saldo < 0 ? 'neg' : 'pos');
@@ -130,6 +154,7 @@ function desenhar() {
       : `${iv.rendimento >= 0 ? '+' : '−'}${brl(Math.abs(iv.rendimento))} de rendimento`, st.invs && iv.n ? (iv.rendimento >= 0 ? 'pos' : 'neg') : null);
 
   desenharPfPj();
+  desenharMesAMes();
   desenharInvestimentos();
   desenharCategorias();
   desenharFluxo();
@@ -173,10 +198,37 @@ function desenharPfPj() {
   else frase.append('A PJ não tem isso tudo: ainda faltariam ', el('b', { class: 'neg' }, brl(-depois)), ' no mês.');
 }
 
+function desenharMeses() {
+  const ms = listaMeses();
+  const mes = mesAtivo();
+  const i = ms.indexOf(mes);
+  $('#mes-titulo').textContent = rotuloMes(mes);
+  $('#mes-ant').disabled = i <= 0;
+  $('#mes-prox').disabled = i >= ms.length - 1;
+  $('#seg-mes').replaceChildren(...ms.map((m) => el('button', { type: 'button', 'data-mes': m, 'aria-pressed': String(m === mes) }, rotuloCurto(m))));
+}
+
+function desenharMesAMes() {
+  const corpo = $('#meses-corpo');
+  corpo.replaceChildren();
+  const mes = mesAtivo();
+  const ms = listaMeses().filter((m) => m === mes || st.lancs.some((l) => mesDe(l) === m));
+  for (const m of ms) {
+    const r = resumo(st.conta, m);
+    const tr = el('tr', { 'data-mes': m, tabindex: '0', 'aria-current': String(m === mes) },
+      el('td', {}, rotuloMes(m)),
+      el('td', { class: 'pos' }, brl(r.entradas)),
+      el('td', {}, brl(r.saidas)),
+      el('td', { class: r.saldo < 0 ? 'neg' : 'pos' }, brl(r.saldo)),
+      el('td', {}, brl(r.aPagar)));
+    corpo.append(tr);
+  }
+}
+
 function desenharCategorias() {
   const ul = $('#cats');
   ul.replaceChildren();
-  const ls = st.lancs.filter((l) => l.tipo !== 'Entrada' && (st.conta === 'Todos' || l.conta === st.conta));
+  const ls = doMes(st.lancs).filter((l) => l.tipo !== 'Entrada' && (st.conta === 'Todos' || l.conta === st.conta));
   const mapa = new Map();
   for (const l of ls) {
     const c = mapa.get(l.categoria) || { previsto: 0, pago: 0 };
@@ -185,7 +237,7 @@ function desenharCategorias() {
     mapa.set(l.categoria, c);
   }
   const cats = [...mapa].sort((a, b) => b[1].previsto - a[1].previsto);
-  if (!cats.length) { ul.append(el('li', { class: 'vazio' }, 'Nenhuma saída aqui.')); return; }
+  if (!cats.length) { ul.append(el('li', { class: 'vazio' }, 'Nenhuma saída neste mês.')); return; }
   const max = cats[0][1].previsto || 1;
   const cor = st.conta === 'PJ' ? 'var(--pj)' : st.conta === 'PF' ? 'var(--pf)' : 'var(--ink)';
   for (const [nome, c] of cats) {
@@ -201,12 +253,18 @@ function desenharCategorias() {
 function desenharFluxo() {
   const box = $('#fluxo');
   box.replaceChildren();
-  const ls = st.lancs.filter((l) => l.data && (st.conta === 'Todos' || l.conta === st.conta));
+  const mes = mesAtivo();
+  const ls = doMes(st.lancs, mes).filter((l) => l.data && (st.conta === 'Todos' || l.conta === st.conta));
   const semData = st.lancs.filter((l) => !l.data && (st.conta === 'Todos' || l.conta === st.conta)).length;
-  $('#fluxo-sub').textContent = 'Saldo acumulado se tudo sair na data prevista.'
-    + (semData ? ` ${semData === 1 ? '1 lançamento sem data fica' : `${semData} lançamentos sem data ficam`} de fora.` : '');
+  $('#fluxo-sub').textContent = 'Saldo acumulado dentro do mês, começando do zero, se tudo sair na data prevista.'
+    + (semData && mes !== SEM_DATA ? ` ${semData === 1 ? '1 lançamento sem data está' : `${semData} lançamentos sem data estão`} em “Sem data”.` : '');
   const dias = [...new Set(ls.map((l) => l.data))].sort();
-  if (!dias.length) { box.append(el('p', { class: 'vazio' }, 'Nenhum lançamento com data.')); return; }
+  if (!dias.length) {
+    box.append(el('p', { class: 'vazio' }, mes === SEM_DATA
+      ? 'Lançamentos sem data não entram no fluxo. Coloque a data na planilha para eles irem para o mês certo.'
+      : 'Nenhum lançamento com data neste mês.'));
+    return;
+  }
   let saldo = 0;
   const pts = dias.map((data) => {
     const doDia = ls.filter((l) => l.data === data);
@@ -381,7 +439,7 @@ function desenharLista() {
   const ul = $('#lista');
   ul.replaceChildren();
   const q = st.busca.toLowerCase();
-  let ls = st.lancs.filter((l) => (st.conta === 'Todos' || l.conta === st.conta)
+  let ls = doMes(st.lancs).filter((l) => (st.conta === 'Todos' || l.conta === st.conta)
     && (st.lista === 'todos' || !pago(l))
     && (!q || `${l.descricao} ${l.categoria} ${l.observacao}`.toLowerCase().includes(q)));
   ls = ls.sort((a, b) => {
@@ -391,7 +449,7 @@ function desenharLista() {
     return st.lista === 'todos' ? b.data.localeCompare(a.data) || b.linha - a.linha : a.data.localeCompare(b.data) || a.linha - b.linha;
   });
   if (!ls.length) {
-    ul.append(el('li', { class: 'vazio' }, st.lista === 'aberto' && !q ? 'Nada em aberto. Tudo pago e recebido.' : 'Nenhum lançamento encontrado.'));
+    ul.append(el('li', { class: 'vazio' }, st.lista === 'aberto' && !q ? 'Nada em aberto neste mês. Tudo pago e recebido.' : 'Nenhum lançamento encontrado neste mês.'));
     return;
   }
   for (const l of ls) {
@@ -518,7 +576,8 @@ async function lancar() {
     await api('adicionar', { lancamento });
     $('#q').value = '';
     st.ajustes = {};
-  }, `Lançado: ${r.descricao}, ${brl(r.valor)} (${r.conta}).`);
+  }, `Lançado: ${r.descricao}, ${brl(r.valor)} (${r.conta})`
+    + (mesDe(lancamento) !== mesAtivo() ? `, em ${rotuloMes(mesDe(lancamento))}.` : '.'));
   $('#q').focus();
 }
 
@@ -544,6 +603,26 @@ $('#seg-conta').addEventListener('click', (e) => {
   st.conta = b.dataset.conta;
   guardar('financas.conta', st.conta);
   desenhar();
+});
+$('#seg-mes').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-mes]');
+  if (b) escolherMes(b.dataset.mes);
+});
+const passarMes = (passo) => {
+  const ms = listaMeses();
+  const novo = ms[ms.indexOf(mesAtivo()) + passo];
+  if (novo) escolherMes(novo);
+};
+$('#mes-ant').addEventListener('click', () => passarMes(-1));
+$('#mes-prox').addEventListener('click', () => passarMes(1));
+$('#meses-corpo').addEventListener('click', (e) => {
+  const tr = e.target.closest('tr[data-mes]');
+  if (tr) escolherMes(tr.dataset.mes);
+});
+$('#meses-corpo').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const tr = e.target.closest('tr[data-mes]');
+  if (tr) { e.preventDefault(); escolherMes(tr.dataset.mes); }
 });
 $('#seg-lista').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-v]');
