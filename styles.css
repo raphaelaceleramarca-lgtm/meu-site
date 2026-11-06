@@ -95,8 +95,43 @@ h1, h2 { margin: 0; text-wrap: balance; }
 /* Meses */
 .icone:disabled { opacity: .35; cursor: default; }
 .mes-barra { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; }
-.mes-nav { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.mes-nav { display: flex; align-items: center; gap: 10px; min-width: 0; position: relative; }
 .mes-titulo { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; min-width: 9.5ch; text-align: center; }
+.mes-botao {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 0; background: transparent; padding: 4px 10px; margin: 0; border-radius: var(--r-sm);
+  font: inherit; letter-spacing: inherit; cursor: pointer; white-space: nowrap;
+}
+.mes-botao:hover, .mes-botao[aria-expanded="true"] { background: var(--soft); }
+.mes-botao svg { width: 18px; height: 18px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+.mes-botao[aria-expanded="true"] svg { transform: rotate(180deg); }
+.mes-pop {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 4;
+  width: 280px; max-width: calc(100vw - 32px);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .18); padding: 12px;
+}
+.mes-pop-ano { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.mes-pop-ano .icone { width: 32px; height: 32px; }
+#ano-titulo { font-weight: 600; font-size: 16px; }
+.mes-pop-grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.mes-pop-grade button {
+  position: relative; border: 1px solid transparent; background: var(--soft); color: var(--ink);
+  border-radius: var(--r-sm); padding: 10px 0; font-size: 14px; font-weight: 500; cursor: pointer; text-transform: capitalize;
+}
+.mes-pop-grade button:hover { border-color: var(--line); }
+.mes-pop-grade button.hoje { border-color: var(--muted); }
+.mes-pop-grade button.tem::after {
+  content: ""; position: absolute; left: 50%; bottom: 4px; width: 4px; height: 4px; margin-left: -2px;
+  border-radius: 50%; background: var(--pf);
+}
+.mes-pop-grade button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.mes-pop-grade button[aria-pressed="true"].tem::after { background: var(--bg); }
+.mes-pop-hoje {
+  display: block; width: 100%; margin-top: 10px; border: 0; background: transparent; color: var(--muted);
+  font-size: 13px; padding: 6px; border-radius: var(--r-sm); cursor: pointer;
+}
+.mes-pop-hoje:hover { background: var(--soft); color: var(--ink); }
 .meses { max-width: 100%; overflow-x: auto; }
 .meses button { white-space: nowrap; }
 .tabela-rolar { overflow-x: auto; }

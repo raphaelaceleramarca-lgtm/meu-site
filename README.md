@@ -22,7 +22,7 @@ Na lista, **Paguei** / **Recebi** preenche o valor realizado e muda o status. **
 
 ## Mês a mês
 
-O painel mostra um mês por vez. Escolha o mês no topo (ou pelas setas): saldo, entradas, saídas, PF e PJ, categorias, fluxo de caixa e a lista mostram só os lançamentos daquele mês.
+O painel mostra um mês por vez. Toque no mês do topo (ex.: **Novembro/26**) para escolher qualquer mês e ano, ou use as setas: saldo, entradas, saídas, PF e PJ, categorias, fluxo de caixa e a lista mostram só os lançamentos daquele mês.
 Cada lançamento vai para o mês da sua data. Os que estão sem data ficam em **Sem data** até você colocar a data na planilha.
 O quadro **Mês a mês** compara todos os meses lado a lado; tocar num mês abre ele.
 

@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
-  <link rel="stylesheet" href="styles.css?v=2026-11-05">
+  <link rel="stylesheet" href="styles.css?v=2026-11-06">
 </head>
 <body>
   <header class="topo">
@@ -104,7 +104,27 @@
           <button type="button" class="icone" id="mes-ant" aria-label="Mês anterior" title="Mês anterior">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
           </button>
-          <h1 class="mes-titulo" id="mes-titulo">—</h1>
+          <div class="mes-escolha">
+            <h1 class="mes-titulo">
+              <button type="button" class="mes-botao" id="mes-botao" aria-haspopup="dialog" aria-expanded="false" aria-controls="mes-pop" title="Escolher mês">
+                <span id="mes-titulo">—</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+            </h1>
+            <div class="mes-pop" id="mes-pop" role="dialog" aria-label="Escolher mês e ano" hidden>
+              <div class="mes-pop-ano">
+                <button type="button" class="icone" id="ano-ant" aria-label="Ano anterior" title="Ano anterior">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+                </button>
+                <span id="ano-titulo">—</span>
+                <button type="button" class="icone" id="ano-prox" aria-label="Próximo ano" title="Próximo ano">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+              <div class="mes-pop-grade" id="mes-grade"></div>
+              <button type="button" class="mes-pop-hoje" id="mes-hoje">Ir para este mês</button>
+            </div>
+          </div>
           <button type="button" class="icone" id="mes-prox" aria-label="Próximo mês" title="Próximo mês">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
           </button>
@@ -234,6 +254,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script type="module" src="app.js?v=2026-11-05"></script>
+  <script type="module" src="app.js?v=2026-11-06"></script>
 </body>
 </html>

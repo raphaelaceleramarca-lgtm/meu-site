@@ -42,9 +42,13 @@ const MESES_NOME = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
 const mesDe = (l) => (l.data ? l.data.slice(0, 7) : SEM_DATA);
 const rotuloMes = (m) => (m === SEM_DATA ? 'Sem data' : `${MESES_NOME[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`);
 const rotuloCurto = (m) => (m === SEM_DATA ? 'Sem data' : `${MESES[Number(m.slice(5, 7)) - 1]}/${m.slice(2, 4)}`);
+const rotuloTitulo = (m) => (m === SEM_DATA ? 'Sem data' : `${MESES_NOME[Number(m.slice(5, 7)) - 1]}/${m.slice(2, 4)}`);
+const mesDeCalendario = (m) => /^\d{4}-(0[1-9]|1[0-2])$/.test(m || '');
 function listaMeses() {
   const ms = new Set(st.lancs.map(mesDe));
   ms.add(hojeISO().slice(0, 7));
+  // Um mês escolhido no seletor aparece mesmo sem lançamentos.
+  if (mesDeCalendario(st.mes)) ms.add(st.mes);
   return [...ms].sort((a, b) => (a === SEM_DATA ? 1 : b === SEM_DATA ? -1 : a.localeCompare(b)));
 }
 function mesAtivo() {
@@ -202,7 +206,9 @@ function desenharMeses() {
   const ms = listaMeses();
   const mes = mesAtivo();
   const i = ms.indexOf(mes);
-  $('#mes-titulo').textContent = rotuloMes(mes);
+  $('#mes-titulo').textContent = rotuloTitulo(mes);
+  $('#mes-botao').setAttribute('aria-label', `${rotuloMes(mes)}. Escolher outro mês`);
+  if (!$('#mes-pop').hidden) desenharSeletor();
   $('#mes-ant').disabled = i <= 0;
   $('#mes-prox').disabled = i >= ms.length - 1;
   $('#seg-mes').replaceChildren(...ms.map((m) => el('button', { type: 'button', 'data-mes': m, 'aria-pressed': String(m === mes) }, rotuloCurto(m))));
@@ -615,6 +621,50 @@ const passarMes = (passo) => {
 };
 $('#mes-ant').addEventListener('click', () => passarMes(-1));
 $('#mes-prox').addEventListener('click', () => passarMes(1));
+
+// ---------- seletor de mês e ano ----------
+let anoSeletor = null;
+function desenharSeletor() {
+  const ativo = mesAtivo();
+  const hoje = hojeISO().slice(0, 7);
+  const comLancamentos = new Set(st.lancs.map(mesDe));
+  $('#ano-titulo').textContent = anoSeletor;
+  $('#mes-grade').replaceChildren(...MESES.map((nome, i) => {
+    const m = `${anoSeletor}-${String(i + 1).padStart(2, '0')}`;
+    const classes = [comLancamentos.has(m) ? 'tem' : '', m === hoje ? 'hoje' : ''].filter(Boolean).join(' ');
+    return el('button', {
+      type: 'button', 'data-mes': m, class: classes,
+      'aria-pressed': String(m === ativo),
+      'aria-label': `${MESES_NOME[i]} de ${anoSeletor}${comLancamentos.has(m) ? ', com lançamentos' : ''}`,
+    }, nome);
+  }));
+}
+function abrirSeletor() {
+  const ativo = mesAtivo();
+  anoSeletor = Number((ativo === SEM_DATA ? hojeISO() : ativo).slice(0, 4));
+  desenharSeletor();
+  $('#mes-pop').hidden = false;
+  $('#mes-botao').setAttribute('aria-expanded', 'true');
+  ($('#mes-grade [aria-pressed="true"]') || $('#mes-grade button')).focus();
+}
+function fecharSeletor(devolverFoco = false) {
+  if ($('#mes-pop').hidden) return;
+  $('#mes-pop').hidden = true;
+  $('#mes-botao').setAttribute('aria-expanded', 'false');
+  if (devolverFoco) $('#mes-botao').focus();
+}
+$('#mes-botao').addEventListener('click', () => ($('#mes-pop').hidden ? abrirSeletor() : fecharSeletor()));
+$('#ano-ant').addEventListener('click', () => { anoSeletor -= 1; desenharSeletor(); });
+$('#ano-prox').addEventListener('click', () => { anoSeletor += 1; desenharSeletor(); });
+$('#mes-grade').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-mes]');
+  if (!b) return;
+  fecharSeletor(true);
+  escolherMes(b.dataset.mes);
+});
+$('#mes-hoje').addEventListener('click', () => { fecharSeletor(true); escolherMes(hojeISO().slice(0, 7)); });
+document.addEventListener('click', (e) => { if (!e.target.closest('.mes-escolha')) fecharSeletor(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharSeletor(true); });
 $('#meses-corpo').addEventListener('click', (e) => {
   const tr = e.target.closest('tr[data-mes]');
   if (tr) escolherMes(tr.dataset.mes);
