@@ -5,10 +5,10 @@
 // (é quando o dinheiro sai de verdade). A data da compra vai na observação.
 
 export const CARTOES = [
-  { nome: 'Bradesco', vence: 5, termos: ['bradesco'] },
-  { nome: 'Itaú', vence: 5, termos: ['itau'] },
-  { nome: 'Infinity Pay', vence: 6, termos: ['infinity pay', 'infinitypay', 'infinite pay', 'infinitepay', 'infinity'] },
-  { nome: 'C6 Bank', vence: 5, termos: ['c6 bank', 'c6bank', 'c6'] },
+  { nome: 'Bradesco', vence: 11, termos: ['bradesco'] },
+  { nome: 'Itaú', vence: 11, termos: ['itau'] },
+  { nome: 'Infinity Pay', vence: 11, termos: ['infinity pay', 'infinitypay', 'infinite pay', 'infinitepay', 'infinity'] },
+  { nome: 'C6 Bank', vence: 11, termos: ['c6 bank', 'c6bank', 'c6'] },
 ];
 
 // A fatura fecha alguns dias antes de vencer. Compra feita depois do
