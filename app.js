@@ -1,5 +1,6 @@
-import { interpretar, lerValor, CATEGORIAS_PADRAO } from './parser.js?v=2026-11-05';
-import { dadosExemplo, investimentosExemplo } from './exemplo.js?v=2026-11-05';
+import { interpretar, lerValor, CATEGORIAS_PADRAO } from './parser.js?v=2026-11-09';
+import { dadosExemplo, investimentosExemplo } from './exemplo.js?v=2026-11-09';
+import { CARTOES, cartaoDe, vencimentoPara } from './cartoes.js?v=2026-11-09';
 
 const $ = (s) => document.querySelector(s);
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -28,6 +29,7 @@ const st = {
   rascunho: null,
   ajustes: {},
   ocupado: false,
+  temCartao: false, // o Apps Script já grava a coluna "Cartão"
 };
 
 const hojeISO = () => {
@@ -35,6 +37,7 @@ const hojeISO = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 const diaMes = (iso) => (iso ? { dia: iso.slice(8, 10), mes: MESES[Number(iso.slice(5, 7)) - 1] } : null);
+const ddmm = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '');
 // ---------- meses ----------
 // Cada lançamento pertence ao mês da sua data. Os sem data ficam em "Sem data".
 const SEM_DATA = 'sem-data';
@@ -82,6 +85,7 @@ async function api(acao, extra = {}) {
   st.lancs = j.lancamentos || [];
   st.invs = Array.isArray(j.investimentos) ? j.investimentos : null;
   st.planilha = j.planilha || '';
+  st.temCartao = Number(j.versao) >= 2;
   return j;
 }
 
@@ -97,6 +101,7 @@ function apiExemplo(acao, extra) {
   st.lancs = demo.map((l) => ({ ...l }));
   st.invs = demoInv.map((l) => ({ ...l }));
   st.planilha = 'Dados de exemplo';
+  st.temCartao = true;
   return Promise.resolve({ ok: true });
 }
 
@@ -158,6 +163,7 @@ function desenhar() {
       : `${iv.rendimento >= 0 ? '+' : '−'}${brl(Math.abs(iv.rendimento))} de rendimento`, st.invs && iv.n ? (iv.rendimento >= 0 ? 'pos' : 'neg') : null);
 
   desenharPfPj();
+  desenharCartoes();
   desenharMesAMes();
   desenharInvestimentos();
   desenharCategorias();
@@ -200,6 +206,63 @@ function desenharPfPj() {
   frase.append('Para fechar o PF, a PJ precisa transferir ', el('b', {}, brl(falta)), ' (pró-labore ou lucros). ');
   if (depois >= 0) frase.append('Depois disso, sobram ', el('b', { class: 'pos' }, brl(depois)), ' na PJ.');
   else frase.append('A PJ não tem isso tudo: ainda faltariam ', el('b', { class: 'neg' }, brl(-depois)), ' no mês.');
+}
+
+function desenharCartoes() {
+  const grade = $('#cartoes-grade');
+  grade.replaceChildren();
+  $('#cartoes-aviso').hidden = st.temCartao;
+  const mes = mesAtivo();
+  const saidas = doMes(st.lancs, mes).filter((l) => l.tipo !== 'Entrada');
+  const soma = (ls, f) => ls.reduce((s, l) => s + (f(l) || 0), 0);
+  for (const c of CARTOES) {
+    const ls = saidas.filter((l) => cartaoDe(l) === c.nome)
+      .sort((a, b) => (a.data || '').localeCompare(b.data || '') || a.linha - b.linha);
+    const total = soma(ls, (l) => l.previsto);
+    const abertos = ls.filter((l) => !pago(l));
+    const aberto = soma(abertos, (l) => l.previsto);
+    const pagoV = soma(ls.filter(pago), (l) => l.realizado);
+    const pj = soma(ls.filter((l) => l.conta === 'PJ'), (l) => l.previsto);
+    const vencido = mes !== SEM_DATA && aberto > 0 && `${mes}-${String(c.vence).padStart(2, '0')}` < hojeISO();
+
+    const caixa = el('div', { class: 'cartao-box' },
+      el('div', { class: 'cartao-topo' },
+        el('span', { class: 'cartao-nome' }, c.nome),
+        el('span', { class: `cartao-venc${vencido ? ' atraso' : ''}` }, vencido ? `venceu dia ${c.vence}` : `vence dia ${c.vence}`)),
+      el('div', { class: 'cartao-total' }, brl(total)));
+
+    if (!ls.length) {
+      caixa.append(el('div', { class: 'cartao-vazio' }, 'Nada neste mês.'));
+      grade.append(caixa);
+      continue;
+    }
+    caixa.append(...[
+      el('div', { class: 'cat-barra' }, el('i', { style: `width:${total ? (Math.min(pagoV, total) / total) * 100 : 0}%;background:var(--pos)` })),
+      el('div', { class: 'conta-linha' }, 'Pago', el('b', {}, brl(pagoV))),
+      el('div', { class: 'conta-linha' }, 'Em aberto', el('b', { class: aberto ? (vencido ? 'atraso-txt' : '') : 'pos' }, brl(aberto))),
+      pj ? el('div', { class: 'cartao-nota' }, `Inclui ${brl(pj)} da PJ.`) : null,
+      el('details', { class: 'cartao-itens' },
+        el('summary', {}, ls.length === 1 ? '1 lançamento' : `${ls.length} lançamentos`),
+        el('ul', {}, ls.map((l) => el('li', {},
+          el('span', { class: 'ci-data' }, l.data ? ddmm(l.data) : '—'),
+          el('span', { class: 'ci-desc', title: l.descricao }, l.descricao),
+          el('span', { class: `ci-valor${pago(l) ? ' pos' : ''}` }, brl(l.previsto))))),
+      ),
+    ].filter(Boolean));
+    if (!aberto) caixa.querySelector('.cartao-venc').replaceChildren('fatura paga'), caixa.querySelector('.cartao-venc').classList.add('pos');
+    if (abertos.length) {
+      const btn = el('button', { type: 'button', class: 'btn cartao-pagar' }, 'Paguei a fatura');
+      let timer;
+      btn.addEventListener('click', () => {
+        if (btn.classList.contains('confirmar')) { clearTimeout(timer); pagarFatura(c, abertos); return; }
+        btn.classList.add('confirmar');
+        btn.textContent = `Confirmar ${brl(aberto)}`;
+        timer = setTimeout(() => { btn.classList.remove('confirmar'); btn.textContent = 'Paguei a fatura'; }, 3500);
+      });
+      caixa.append(btn);
+    }
+    grade.append(caixa);
+  }
 }
 
 function desenharMeses() {
@@ -447,7 +510,7 @@ function desenharLista() {
   const q = st.busca.toLowerCase();
   let ls = doMes(st.lancs).filter((l) => (st.conta === 'Todos' || l.conta === st.conta)
     && (st.lista === 'todos' || !pago(l))
-    && (!q || `${l.descricao} ${l.categoria} ${l.observacao}`.toLowerCase().includes(q)));
+    && (!q || `${l.descricao} ${l.categoria} ${l.observacao} ${cartaoDe(l) || ''}`.toLowerCase().includes(q)));
   ls = ls.sort((a, b) => {
     if (!a.data && !b.data) return a.linha - b.linha;
     if (!a.data) return 1;
@@ -462,6 +525,8 @@ function desenharLista() {
     const m = diaMes(l.data);
     const entrada = l.tipo === 'Entrada';
     const meta = [el('span', { class: `tag ${l.conta}` }, l.conta), l.categoria];
+    const cart = cartaoDe(l);
+    if (cart) meta.push(el('span', { class: 'tag cartao' }, cart));
     if (atrasado(l)) meta.push(el('span', { class: 'tag atraso' }, 'Vencido'));
     if (pago(l)) meta.push(el('span', { class: 'tag ok' }, entrada ? 'Recebido' : 'Pago'));
     if (l.observacao) meta.push(l.observacao);
@@ -522,6 +587,11 @@ async function rodar(fn, msgOk) {
 const sincronizar = (msg) => rodar(() => api('listar'), msg);
 const marcarPago = (l) => rodar(() => api('atualizar', { linha: l.linha, descricao: l.descricao, campos: { realizado: l.previsto, status: PAGO } }),
   `${l.descricao}: marcado como ${l.tipo === 'Entrada' ? 'recebido' : 'pago'}.`);
+const pagarFatura = (c, abertos) => rodar(async () => {
+  for (const l of abertos) {
+    await api('atualizar', { linha: l.linha, descricao: l.descricao, campos: { realizado: l.previsto, status: PAGO } });
+  }
+}, `Fatura ${c.nome} marcada como paga.`);
 const excluir = (l) => rodar(() => api('excluir', { linha: l.linha, descricao: l.descricao }), `${l.descricao} excluído.`);
 
 // ---------- lançamento rápido ----------
@@ -540,6 +610,13 @@ function atualizarRascunho() {
   }
   const auto = interpretar(frase, st.lancs);
   const r = { ...auto, ...st.ajustes };
+  // Compra no cartão: vai para o vencimento da fatura e fica como prevista.
+  r.compra = null;
+  if (r.cartao && r.tipo !== 'Entrada' && r.categoria !== 'Cartões') {
+    r.compra = auto.data;
+    if (!('data' in st.ajustes)) r.data = vencimentoPara(r.cartao, auto.data);
+    if (!('status' in st.ajustes)) r.status = 'Previsto';
+  }
   st.rascunho = r;
   $('#previa').hidden = false;
   document.querySelectorAll('#previa .seg').forEach((s) => {
@@ -561,7 +638,9 @@ function atualizarRascunho() {
   const pista = $('#pista');
   pista.replaceChildren();
   if (!(r.valor > 0)) pista.append('Falta o valor. Escreva um número, como 120 ou 1.250,90.');
-  else pista.append(el('b', {}, `${r.tipo} de ${brl(r.valor)}`), ` em ${r.conta}, ${r.categoria}`, r.data ? `, ${diaMes(r.data).dia} ${diaMes(r.data).mes}` : '', '.', auto.pistas.length && !Object.keys(st.ajustes).length ? ` ${auto.pistas[auto.pistas.length - 1]}.` : '', ' Enter para lançar.');
+  else if (r.compra) pista.append(el('b', {}, `${r.tipo} de ${brl(r.valor)}`), ` em ${r.conta}, ${r.categoria}, no cartão ${r.cartao}.`,
+    r.data ? ` Entra na fatura de ${diaMes(r.data).dia} ${diaMes(r.data).mes}.` : '', ' Enter para lançar.');
+  else pista.append(el('b', {}, `${r.tipo} de ${brl(r.valor)}`), ` em ${r.conta}, ${r.categoria}`, r.cartao ? `, cartão ${r.cartao}` : '', r.data ? `, ${diaMes(r.data).dia} ${diaMes(r.data).mes}` : '', '.', auto.pistas.length && !Object.keys(st.ajustes).length ? ` ${auto.pistas[auto.pistas.length - 1]}.` : '', ' Enter para lançar.');
 }
 
 async function lancar() {
@@ -577,7 +656,13 @@ async function lancar() {
     status: r.status,
     observacao: '',
     conta: r.conta,
+    cartao: r.cartao || '',
   };
+  const notas = [];
+  // Sem a coluna "Cartão" no Apps Script, o cartão vai na observação para não se perder.
+  if (r.cartao && !st.temCartao) notas.push(`Cartão ${r.cartao}`);
+  if (r.compra && r.compra !== lancamento.data) notas.push(`compra em ${ddmm(r.compra)}`);
+  lancamento.observacao = notas.join(' · ').replace(/^c/, 'C');
   await rodar(async () => {
     await api('adicionar', { lancamento });
     $('#q').value = '';

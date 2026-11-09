@@ -26,6 +26,17 @@ O painel mostra um mês por vez. Toque no mês do topo (ex.: **Novembro/26**) pa
 Cada lançamento vai para o mês da sua data. Os que estão sem data ficam em **Sem data** até você colocar a data na planilha.
 O quadro **Mês a mês** compara todos os meses lado a lado; tocar num mês abre ele.
 
+## Cartões
+
+Na prévia do lançamento, escolha o cartão (**Bradesco**, **Itaú**, **Infinity Pay**, **C6 Bank**) ou escreva na frase: `rodízio 209 no infinity pay`, `uber 20 c6 ontem`.
+Compra no cartão entra com a **data de vencimento da fatura** (é quando o dinheiro sai) e fica como prevista; a data da compra vai na observação.
+A fatura fecha 7 dias antes do vencimento: compra depois disso vai para a fatura do mês seguinte. A data sempre pode ser corrigida antes de lançar.
+
+A seção **Cartões** mostra, para o mês aberto, o total de cada fatura (PF e PJ juntos), quanto já foi pago e o que está em aberto. **Paguei a fatura** marca todos os lançamentos em aberto daquele cartão como pagos.
+Vencimentos usados: Bradesco, Itaú e C6 Bank dia 5; Infinity Pay dia 6 (dá para mudar em `cartoes.js`).
+
+O cartão fica na coluna **Cartão** (J) da aba `Lançamentos`. Faturas lançadas como "Cartão Bradesco", "Fatura itaú" etc. também são reconhecidas.
+
 ## Investimentos
 
 A seção **Investimentos** usa a aba `Investimentos` da planilha (uma linha por aplicação: nome, tipo, instituição, PF/PJ, valor aplicado e saldo atual).
@@ -45,7 +56,8 @@ Se você mudar o código do Apps Script depois, use **Implantar → Gerenciar im
 ## Arquivos
 
 - `index.html`, `styles.css`, `app.js`: o site.
-- `parser.js`: transforma a frase em lançamento (valor, data, tipo, conta, categoria).
+- `parser.js`: transforma a frase em lançamento (valor, data, tipo, conta, categoria, cartão).
+- `cartoes.js`: lista de cartões, vencimentos e como reconhecer o cartão de um lançamento.
 - `exemplo.js`: dados fictícios do modo de exemplo.
 - `apps-script/Codigo.gs`: a ponte entre o site e a planilha.
 

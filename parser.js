@@ -2,6 +2,8 @@
 // e devolve um lançamento já classificado. Primeiro procura algo parecido no histórico
 // da planilha; se não achar, usa palavras-chave.
 
+import { cartaoNoTexto, PALAVRAS_CARTAO } from './cartoes.js?v=2026-11-09';
+
 export const CATEGORIAS_PADRAO = [
   'Receitas', 'Moradia', 'Alimentação', 'Transporte', 'Saúde e bem-estar', 'Assinaturas',
   'Cartões', 'Dívidas', 'Comunicação', 'Pessoal', 'Lazer', 'Educação', 'Impostos',
@@ -9,10 +11,10 @@ export const CATEGORIAS_PADRAO = [
 ];
 
 const REGRAS = [
-  ['Alimentação', ['mercado', 'supermercado', 'ifood', 'restaurante', 'padaria', 'almoco', 'jantar', 'lanche', 'feira', 'acougue', 'hortifruti']],
+  ['Alimentação', ['mercado', 'supermercado', 'ifood', 'restaurante', 'rodizio', 'cafe', 'padaria', 'almoco', 'jantar', 'lanche', 'feira', 'acougue', 'hortifruti']],
   ['Moradia', ['aluguel', 'condominio', 'luz', 'energia', 'agua', 'gas', 'internet', 'iptu', 'casa', 'faxina', 'diarista']],
   ['Transporte', ['uber', 'gasolina', 'combustivel', 'estacionamento', 'onibus', 'metro', 'pedagio', 'ipva', 'oficina', 'mecanico']],
-  ['Saúde e bem-estar', ['farmacia', 'remedio', 'plano de saude', 'plano saude', 'medico', 'dentista', 'academia', 'welhub', 'wellhub', 'gympass', 'terapia', 'exame']],
+  ['Saúde e bem-estar', ['farmacia', 'drogaria', 'remedio', 'fisioterapia', 'plano de saude', 'plano saude', 'medico', 'dentista', 'academia', 'welhub', 'wellhub', 'gympass', 'terapia', 'exame']],
   ['Assinaturas', ['spotify', 'netflix', 'gpt', 'chatgpt', 'google', 'youtube', 'icloud', 'prime', 'disney', 'hbo', 'revayah', 'canva', 'notion', 'claude', 'adobe', 'assinatura']],
   ['Cartões', ['cartao', 'fatura']],
   ['Dívidas', ['emprestimo', 'parcela', 'parcelamento', 'serasa', 'financiamento', 'acordo', 'divida']],
@@ -119,6 +121,24 @@ export function interpretar(frase, historico = [], hojeRef = new Date()) {
   const quando = lerData(tokens, usados, hoje);
   let valor = lerQuantia(tokens, usados);
 
+  // Cartão citado na frase ("rodízio 209 no c6"). As palavras do cartão saem da
+  // descrição e não contam para a categoria, a não ser que seja a própria fatura.
+  const cartao = cartaoNoTexto(original);
+  const fatura = temPalavra(texto, 'fatura');
+  const doCartao = new Set();
+  if (cartao) {
+    tokens.forEach((tok, i) => {
+      const t = limpo(tok);
+      const ant = i ? limpo(tokens[i - 1]) : '';
+      if (PALAVRAS_CARTAO.has(t) || (t === 'pay' && (ant === 'infinity' || ant === 'infinite')) || (t === 'bank' && ant === 'c6')
+        || (!fatura && (t === 'cartao' || t === 'credito'))) {
+        doCartao.add(i);
+        usados.add(i);
+      }
+    });
+  }
+  const textoClasse = cartao && !fatura ? semAcento(tokens.filter((_, i) => !doCartao.has(i)).join(' ')) : texto;
+
   const sinal = original.startsWith('+') ? 'Entrada' : original.startsWith('-') ? 'Saída' : null;
   let tipo = sinal;
   let status = null;
@@ -133,7 +153,7 @@ export function interpretar(frase, historico = [], hojeRef = new Date()) {
     else if (CONTA_PF.includes(t)) { conta = 'PF'; usados.add(i); }
   });
 
-  const hist = doHistorico(texto, historico);
+  const hist = doHistorico(textoClasse, historico);
   let categoria = null;
   let descricao = null;
   if (hist) {
@@ -147,7 +167,7 @@ export function interpretar(frase, historico = [], hojeRef = new Date()) {
 
   tipo = tipo || 'Saída';
   if (!categoria) {
-    const regra = REGRAS.find(([, termos]) => termos.some((t) => temPalavra(texto, t)));
+    const regra = cartao && fatura ? ['Cartões'] : REGRAS.find(([, termos]) => termos.some((t) => temPalavra(textoClasse, t)));
     if (regra && !(tipo === 'Entrada' && regra[0] !== 'Impostos')) categoria = regra[0];
     else if (/\bDAS\b/.test(original)) categoria = 'Impostos';
     else categoria = tipo === 'Entrada' ? 'Receitas' : 'Outros';
@@ -166,7 +186,8 @@ export function interpretar(frase, historico = [], hojeRef = new Date()) {
     while (resto.length && ligacao(resto[resto.length - 1])) resto.pop();
     descricao = resto.join(' ').replace(/^[+-]/, '');
     descricao = descricao ? descricao.charAt(0).toUpperCase() + descricao.slice(1) : categoria;
+    if (cartao && fatura) descricao = `Fatura ${cartao}`;
   }
 
-  return { tipo, conta, categoria, descricao, valor, data: quando.data, status, pistas };
+  return { tipo, conta, categoria, descricao, valor, data: quando.data, status, cartao: cartao || '', pistas };
 }

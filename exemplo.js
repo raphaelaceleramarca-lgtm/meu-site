@@ -13,7 +13,10 @@ export function dadosExemplo(hoje = new Date()) {
     [d(5), 'Saída', 'Moradia', 'Aluguel', 2100, 2100, 'Pago/Recebido', '', 'PF'],
     [d(10), 'Saída', 'Moradia', 'Luz', 260, null, 'Previsto', '', 'PF'],
     [d(10), 'Saída', 'Moradia', 'Internet', 99, null, 'Previsto', '', 'PF'],
-    [d(12), 'Saída', 'Cartões', 'Fatura do cartão', 1350, null, 'Previsto', '', 'PF'],
+    [d(5), 'Saída', 'Cartões', 'Fatura Bradesco', 1350, null, 'Previsto', '', 'PF', 'Bradesco'],
+    [d(6), 'Saída', 'Alimentação', 'Restaurante', 180, null, 'Previsto', 'Compra em 20/' + String(ant.getMonth() + 1).padStart(2, '0'), 'PF', 'Infinity Pay'],
+    [d(6), 'Saída', 'Assinaturas', 'Google Workspace', 80.61, null, 'Previsto', '', 'PJ', 'Infinity Pay'],
+    [d(5), 'Saída', 'Transporte', 'Uber', 42.5, 42.5, 'Pago/Recebido', '', 'PF', 'C6 Bank'],
     [d(14), 'Saída', 'Assinaturas', 'ChatGPT', 100, null, 'Previsto', '', 'PJ'],
     [d(20), 'Saída', 'Impostos', 'DAS', 210, null, 'Previsto', '', 'PJ'],
     [d(22), 'Saída', 'Marketing', 'Anúncios', 600, null, 'Previsto', '', 'PJ'],
@@ -21,11 +24,11 @@ export function dadosExemplo(hoje = new Date()) {
     [null, 'Saída', 'Alimentação', 'Mercado', 1400, null, 'Previsto', 'Sem data definida', 'PF'],
     [da(5), 'Entrada', 'Receitas', 'Cliente Alfa', 4200, 4200, 'Pago/Recebido', '', 'PJ'],
     [da(5), 'Saída', 'Moradia', 'Aluguel', 2100, 2100, 'Pago/Recebido', '', 'PF'],
-    [da(12), 'Saída', 'Cartões', 'Fatura do cartão', 1180, 1180, 'Pago/Recebido', '', 'PF'],
+    [da(5), 'Saída', 'Cartões', 'Fatura Bradesco', 1180, 1180, 'Pago/Recebido', '', 'PF', 'Bradesco'],
     [da(20), 'Saída', 'Impostos', 'DAS', 210, 210, 'Pago/Recebido', '', 'PJ'],
   ];
-  return linhas.map(([data, tipo, categoria, descricao, previsto, realizado, status, observacao, conta], i) => (
-    { linha: i + 2, data, tipo, categoria, descricao, previsto, realizado, status, observacao, conta }
+  return linhas.map(([data, tipo, categoria, descricao, previsto, realizado, status, observacao, conta, cartao = ''], i) => (
+    { linha: i + 2, data, tipo, categoria, descricao, previsto, realizado, status, observacao, conta, cartao }
   ));
 }
 

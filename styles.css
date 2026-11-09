@@ -325,3 +325,27 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* Cartões */
+.cartoes-seg { max-width: 100%; overflow-x: auto; }
+.cartoes-seg button { white-space: nowrap; }
+.cartoes-grade { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.cartao-box { border-radius: 12px; padding: 12px; background: var(--soft); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.cartao-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.cartao-nome { font-weight: 600; font-size: 14px; }
+.cartao-venc { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.cartao-venc.atraso, .atraso-txt { color: var(--late) !important; }
+.cartao-venc.pos { color: var(--pos); }
+.cartao-total { font-size: 20px; font-weight: 500; letter-spacing: -0.01em; }
+.cartao-vazio, .cartao-nota { font-size: 12px; color: var(--muted); }
+.cartao-itens summary { font-size: 12px; color: var(--muted); cursor: pointer; }
+.cartao-itens ul { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.cartao-itens li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; font-size: 12px; }
+.ci-data { color: var(--muted); }
+.ci-desc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ci-valor { white-space: nowrap; }
+.cartao-pagar { margin-top: auto; font-size: 13px; padding: 7px 12px; }
+.cartao-pagar.confirmar { background: var(--pos); border-color: var(--pos); color: #fff; }
+.tag.cartao { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); font-weight: 500; }
+@media (max-width: 860px) { .cartoes-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 340px) { .cartoes-grade { grid-template-columns: 1fr; } }

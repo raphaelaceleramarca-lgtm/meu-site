@@ -4,7 +4,9 @@
 
 const SENHA = 'troque-por-uma-senha-sua';
 const ABA = 'Lançamentos';
-const COLUNAS = ['data', 'tipo', 'categoria', 'descricao', 'previsto', 'realizado', 'status', 'observacao', 'conta'];
+const VERSAO = 2;
+const COLUNAS = ['data', 'tipo', 'categoria', 'descricao', 'previsto', 'realizado', 'status', 'observacao', 'conta', 'cartao'];
+const TITULO_CARTAO = 'Cartão'; // coluna J da aba Lançamentos
 const ABA_INV = 'Investimentos';
 const COLUNAS_INV = ['data', 'nome', 'tipo', 'instituicao', 'conta', 'aplicado', 'saldo', 'observacao'];
 const TITULOS_INV = ['Atualizado em', 'Investimento', 'Tipo', 'Instituição', 'Conta', 'Valor aplicado', 'Saldo atual', 'Observação'];
@@ -28,6 +30,7 @@ function doPost(e) {
     const planilha = SpreadsheetApp.getActive();
     const aba = planilha.getSheetByName(ABA);
     if (!aba) return json({ ok: false, erro: 'Não encontrei a aba "' + ABA + '".' });
+    garantirColunaCartao(aba);
 
     if (pedido.acao === 'adicionar') adicionar(aba, pedido.lancamento);
     else if (pedido.acao === 'atualizar') atualizar(aba, pedido.linha, pedido.descricao, pedido.campos);
@@ -41,6 +44,7 @@ function doPost(e) {
     const abaInv = planilha.getSheetByName(ABA_INV);
     return json({
       ok: true,
+      versao: VERSAO,
       planilha: planilha.getName(),
       lancamentos: listar(aba),
       investimentos: abaInv ? invListar(abaInv) : [],
@@ -71,6 +75,7 @@ function listar(aba) {
       status: texto(r[6]),
       observacao: texto(r[7]),
       conta: texto(r[8]).toUpperCase() || 'Sem conta',
+      cartao: texto(r[9]),
     });
   });
   return saida;
@@ -91,6 +96,7 @@ function adicionar(aba, l) {
     texto(l.status) || 'Previsto',
     texto(l.observacao),
     l.conta === 'PJ' ? 'PJ' : 'PF',
+    texto(l.cartao),
   ]]);
   aba.getRange(linha, 1).setNumberFormat('dd/MM/yyyy');
   aba.getRange(linha, 5, 1, 2).setNumberFormat('"R$ "#,##0.00');
@@ -110,6 +116,14 @@ function atualizar(aba, linha, descricao, campos) {
     if (campo === 'data') celula.setNumberFormat('dd/MM/yyyy');
     if (campo === 'previsto' || campo === 'realizado') celula.setNumberFormat('"R$ "#,##0.00');
   });
+}
+
+// Cria o título "Cartão" na coluna J se ainda não existir.
+function garantirColunaCartao(aba) {
+  const col = COLUNAS.indexOf('cartao') + 1;
+  if (aba.getMaxColumns() < col) aba.insertColumnsAfter(aba.getMaxColumns(), col - aba.getMaxColumns());
+  const titulo = aba.getRange(1, col);
+  if (vazio(titulo.getValue())) titulo.setValue(TITULO_CARTAO).setFontWeight('bold');
 }
 
 function excluir(aba, linha, descricao) {

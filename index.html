@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
-  <link rel="stylesheet" href="styles.css?v=2026-11-06">
+  <link rel="stylesheet" href="styles.css?v=2026-11-09">
 </head>
 <body>
   <header class="topo">
@@ -91,6 +91,13 @@
             <button type="button" data-v="Previsto">Previsto</button>
             <button type="button" data-v="Pago/Recebido">Pago</button>
           </div>
+          <div class="seg mini cartoes-seg" data-campo="cartao" role="group" aria-label="Cartão">
+            <button type="button" data-v="">Sem cartão</button>
+            <button type="button" data-v="Bradesco">Bradesco</button>
+            <button type="button" data-v="Itaú">Itaú</button>
+            <button type="button" data-v="Infinity Pay">Infinity Pay</button>
+            <button type="button" data-v="C6 Bank">C6 Bank</button>
+          </div>
           <label class="campo"><span>Descrição</span><input id="p-descricao" autocomplete="off"></label>
           <label class="campo estreito"><span>Valor</span><input id="p-valor" inputmode="decimal" autocomplete="off"></label>
           <label class="campo"><span>Categoria</span><select id="p-categoria"></select></label>
@@ -167,6 +174,19 @@
           <p class="sub-card">Barra cheia: já pago. Clara: ainda previsto.</p>
           <ul class="cats" id="cats"></ul>
         </div>
+      </section>
+
+      <section class="card" id="cartoes">
+        <div class="cab-card">
+          <div>
+            <h2 class="titulo-card">Cartões</h2>
+            <p class="sub-card">Fatura de cada cartão que vence neste mês, somando PF e PJ. Compra no cartão entra no mês em que a fatura vence.</p>
+          </div>
+        </div>
+        <div class="inv-aviso" id="cartoes-aviso" hidden>
+          O site já mostra os cartões. Para gravar o cartão na coluna <b>Cartão</b> da planilha, atualize o código do Apps Script: Ajustes → Copiar código do Apps Script, cole no lugar do antigo, ajuste a senha na linha 5 e use <b>Implantar → Gerenciar implantações → editar → Nova versão</b>. Até lá, o cartão vai na observação.
+        </div>
+        <div class="cartoes-grade" id="cartoes-grade"></div>
       </section>
 
       <section class="card" id="card-meses">
@@ -254,6 +274,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script type="module" src="app.js?v=2026-11-06"></script>
+  <script type="module" src="app.js?v=2026-11-09"></script>
 </body>
 </html>
